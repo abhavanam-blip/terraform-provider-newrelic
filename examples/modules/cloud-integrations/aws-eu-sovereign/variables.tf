@@ -1,78 +1,49 @@
-# Required Variables
-variable "account_name" {
-  description = "The name of the AWS EU Sovereign account in New Relic"
+variable "newrelic_account_id" {
+  description = "The New Relic account ID"
   type        = string
 }
 
-variable "aws_role_arn" {
-  description = "The ARN of the IAM role in AWS EU Sovereign for New Relic integrations"
-  type        = string
-}
+variable "newrelic_account_region" {
+  type    = string
+  default = "US"
 
-# Optional Variables
-variable "metric_collection_mode" {
-  description = "How metrics are collected. Either PULL or PUSH"
-  type        = string
-  default     = "PUSH"
   validation {
-    condition     = contains(["PULL", "PUSH"], var.metric_collection_mode)
-    error_message = "metric_collection_mode must be either 'PULL' or 'PUSH'."
+    condition     = contains(["US", "EU"], var.newrelic_account_region)
+    error_message = "Valid values for region are 'US' or 'EU'."
   }
 }
 
-variable "enable_integrations" {
-  description = "Whether to enable AWS integrations"
+variable "name" {
+  type    = string
+  default = "production"
+}
+
+variable "exclude_metric_filters" {
+  description = "Map of exclusive metric filters. Use the namespace as the key and the list of metric names as the value."
+  type        = map(list(string))
+  default     = {}
+}
+
+variable "include_metric_filters" {
+  description = "Map of inclusive metric filters. Use the namespace as the key and the list of metric names as the value."
+  type        = map(list(string))
+  default     = {}
+}
+
+variable "output_format" {
+  description = "The output format for the CloudWatch metric stream"
+  type        = string
+  default     = "opentelemetry0.7"
+
+  validation {
+    condition     = contains(["opentelemetry0.7", "opentelemetry1.0"], var.output_format)
+    error_message = "The output_format must be either 'opentelemetry0.7' or 'opentelemetry1.0'."
+  }
+}
+
+variable "enable_config_recorder" {
+  description = "Set to true to enable AWS Configuration Recorder."
   type        = bool
   default     = true
 }
 
-# Integration Configuration Variables
-variable "cloudtrail_integration" {
-  description = "Configuration for CloudTrail integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eusc-de-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "health_integration" {
-  description = "Configuration for AWS Health integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "trusted_advisor_integration" {
-  description = "Configuration for AWS Trusted Advisor integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "xray_integration" {
-  description = "Configuration for AWS X-Ray integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eusc-de-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
