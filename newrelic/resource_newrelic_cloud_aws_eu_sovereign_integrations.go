@@ -33,41 +33,6 @@ func resourceNewRelicCloudAwsEuSovereignIntegrations() *schema.Resource {
 				ForceNew:    true,
 				Description: "The ID of the linked AWS EU Sovereign account in New Relic.",
 			},
-			"alb": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "Application Load Balancer",
-				Elem:        cloudAwsEuSovereignIntegrationsALBElem(),
-			},
-			"api_gateway": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "API Gateway",
-				Elem:        cloudAwsEuSovereignIntegrationsAPIGatewayElem(),
-			},
-			"auto_scaling": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "AutoScaling",
-				Elem:        cloudAwsEuSovereignIntegrationsAutoScalingElem(),
-			},
-			"aws_direct_connect": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "AWS Direct Connect",
-				Elem:        cloudAwsEuSovereignIntegrationsAwsDirectConnectElem(),
-			},
-			"aws_states": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "AWS Step Functions",
-				Elem:        cloudAwsEuSovereignIntegrationsAwsStatesElem(),
-			},
 			"cloudtrail": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -75,124 +40,26 @@ func resourceNewRelicCloudAwsEuSovereignIntegrations() *schema.Resource {
 				Description: "CloudTrail",
 				Elem:        cloudAwsEuSovereignIntegrationsCloudtrailElem(),
 			},
-			"dynamodb": {
+			"health": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "DynamoDB",
-				Elem:        cloudAwsEuSovereignIntegrationsDynamoDbElem(),
+				Description: "AWS Health",
+				Elem:        cloudAwsEuSovereignIntegrationsHealthElem(),
 			},
-			"ebs": {
+			"trusted_advisor": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "EBS",
-				Elem:        cloudAwsEuSovereignIntegrationsEbsElem(),
+				Description: "AWS Trusted Advisor",
+				Elem:        cloudAwsEuSovereignIntegrationsTrustedAdvisorElem(),
 			},
-			"ec2": {
+			"xray": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "EC2",
-				Elem:        cloudAwsEuSovereignIntegrationsEc2Elem(),
-			},
-			"ecs": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "ECS",
-				Elem:        cloudAwsEuSovereignIntegrationsEcsElem(),
-			},
-			"efs": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "EFS",
-				Elem:        cloudAwsEuSovereignIntegrationsEfsElem(),
-			},
-			"elasticache": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "ElastiCache",
-				Elem:        cloudAwsEuSovereignIntegrationsElasticacheElem(),
-			},
-			"elasticsearch": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "Elasticsearch",
-				Elem:        cloudAwsEuSovereignIntegrationsElasticsearchElem(),
-			},
-			"elb": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "ELB (Classic)",
-				Elem:        cloudAwsEuSovereignIntegrationsElbElem(),
-			},
-			"emr": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "EMR",
-				Elem:        cloudAwsEuSovereignIntegrationsEmrElem(),
-			},
-			"iam": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "IAM",
-				Elem:        cloudAwsEuSovereignIntegrationsIamElem(),
-			},
-			"lambda": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "Lambda",
-				Elem:        cloudAwsEuSovereignIntegrationsLambdaElem(),
-			},
-			"rds": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "RDS",
-				Elem:        cloudAwsEuSovereignIntegrationsRdsElem(),
-			},
-			"redshift": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "Redshift",
-				Elem:        cloudAwsEuSovereignIntegrationsRedshiftElem(),
-			},
-			"route53": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "Route53",
-				Elem:        cloudAwsEuSovereignIntegrationsRoute53Elem(),
-			},
-			"s3": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "S3",
-				Elem:        cloudAwsEuSovereignIntegrationsS3Elem(),
-			},
-			"sns": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "SNS",
-				Elem:        cloudAwsEuSovereignIntegrationsSnsElem(),
-			},
-			"sqs": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Description: "SQS",
-				Elem:        cloudAwsEuSovereignIntegrationsSqsElem(),
+				Description: "AWS X-Ray",
+				Elem:        cloudAwsEuSovereignIntegrationsXrayElem(),
 			},
 		},
 	}
@@ -278,8 +145,8 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsDelete(ctx context.Context, 
 	return nil
 }
 
-// Integration schema elements - these would need to be implemented based on the GovCloud patterns
-func cloudAwsEuSovereignIntegrationsALBElem() *schema.Resource {
+// CloudTrail integration schema element
+func cloudAwsEuSovereignIntegrationsCloudtrailElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"metrics_polling_interval": {
@@ -303,11 +170,38 @@ func cloudAwsEuSovereignIntegrationsALBElem() *schema.Resource {
 				Optional:    true,
 				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
 			},
-			"load_balancer_prefixes": {
-				Type:        schema.TypeList,
+			"tag_key": {
+				Type:        schema.TypeString,
 				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Description: "Specify each name or prefix for the LBs that you want to monitor. Filter values are case-sensitive.",
+				Description: "Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.",
+			},
+			"tag_value": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.",
+			},
+		},
+	}
+}
+
+// AWS Health integration schema element
+func cloudAwsEuSovereignIntegrationsHealthElem() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"metrics_polling_interval": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The data polling interval in seconds",
+			},
+			"fetch_extended_inventory": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.",
+			},
+			"fetch_tags": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
 			},
 			"tag_key": {
 				Type:        schema.TypeString,
@@ -323,11 +217,41 @@ func cloudAwsEuSovereignIntegrationsALBElem() *schema.Resource {
 	}
 }
 
-// Add similar element functions for other services...
-// For brevity, I'm showing the pattern - you would need to implement all the other integration elements
-// following the same pattern as the GovCloud implementation
+// AWS Trusted Advisor integration schema element
+func cloudAwsEuSovereignIntegrationsTrustedAdvisorElem() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"metrics_polling_interval": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The data polling interval in seconds",
+			},
+			"fetch_extended_inventory": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.",
+			},
+			"fetch_tags": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
+			},
+			"tag_key": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.",
+			},
+			"tag_value": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.",
+			},
+		},
+	}
+}
 
-func cloudAwsEuSovereignIntegrationsAPIGatewayElem() *schema.Resource {
+// AWS X-Ray integration schema element
+func cloudAwsEuSovereignIntegrationsXrayElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"metrics_polling_interval": {
@@ -341,11 +265,15 @@ func cloudAwsEuSovereignIntegrationsAPIGatewayElem() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "Specify each AWS region that includes the resources that you want to monitor",
 			},
-			"stage_prefixes": {
-				Type:        schema.TypeList,
+			"fetch_extended_inventory": {
+				Type:        schema.TypeBool,
 				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.",
+			},
+			"fetch_tags": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
 			},
 			"tag_key": {
 				Type:        schema.TypeString,
@@ -360,29 +288,3 @@ func cloudAwsEuSovereignIntegrationsAPIGatewayElem() *schema.Resource {
 		},
 	}
 }
-
-// Additional integration element functions would follow the same pattern...
-// cloudAwsEuSovereignIntegrationsAutoScalingElem(), cloudAwsEuSovereignIntegrationsAwsDirectConnectElem(), etc.
-
-// For brevity, I'm including stub implementations for the remaining integration elements
-func cloudAwsEuSovereignIntegrationsAutoScalingElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsAwsDirectConnectElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsAwsStatesElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsCloudtrailElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsDynamoDbElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsEbsElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsEc2Elem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsEcsElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsEfsElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsElasticacheElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsElasticsearchElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsElbElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsEmrElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsIamElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsLambdaElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsRdsElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsRedshiftElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsRoute53Elem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsS3Elem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsSnsElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }
-func cloudAwsEuSovereignIntegrationsSqsElem() *schema.Resource { return &schema.Resource{Schema: map[string]*schema.Schema{}} }

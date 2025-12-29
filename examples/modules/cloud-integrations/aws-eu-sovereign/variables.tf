@@ -13,7 +13,7 @@ variable "aws_role_arn" {
 variable "metric_collection_mode" {
   description = "How metrics are collected. Either PULL or PUSH"
   type        = string
-  default     = "PULL"
+  default     = "PUSH"
   validation {
     condition     = contains(["PULL", "PUSH"], var.metric_collection_mode)
     error_message = "metric_collection_mode must be either 'PULL' or 'PUSH'."

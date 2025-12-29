@@ -29,91 +29,22 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "account" {
 resource "newrelic_cloud_aws_eu_sovereign_integrations" "integrations" {
   linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.account.id
 
-  alb {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  api_gateway {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1"]
-  }
-
-  auto_scaling {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-  }
-
   cloudtrail {
     metrics_polling_interval = 300
     aws_regions              = ["eu-isob-east-1"]
   }
 
-  dynamodb {
+  health {
+    metrics_polling_interval = 300
+  }
+
+  trusted_advisor {
+    metrics_polling_interval = 300
+  }
+
+  xray {
     metrics_polling_interval = 300
     aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  ebs {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1"]
-    fetch_extended_inventory = true
-  }
-
-  ec2 {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-  }
-
-  elasticsearch {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  elb {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-  }
-
-  lambda {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  rds {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  s3 {
-    metrics_polling_interval = 3600
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  sns {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1"]
-    fetch_extended_inventory = true
-  }
-
-  sqs {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
   }
 }
 ```
@@ -125,121 +56,21 @@ The following arguments are supported:
 * `account_id` - (Optional) The account ID for the New Relic account. If omitted, this defaults to the account ID specified in the provider configuration.
 * `linked_account_id` - (Required) The ID of the AWS EU Sovereign linked account.
 
-Each of the integration blocks supports the following common arguments:
+The following integration types are supported:
 
+### `cloudtrail`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
 * `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
 
-Additional arguments vary by integration type:
+### `health`
+* `metrics_polling_interval` - (Optional) The data polling interval in seconds.
 
-### `alb`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `load_balancer_prefixes` - (Optional) List of Load Balancer name prefixes to monitor.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
+### `trusted_advisor`
+* `metrics_polling_interval` - (Optional) The data polling interval in seconds.
 
-### `api_gateway`
-* `stage_prefixes` - (Optional) List of API Gateway stage prefixes to monitor.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `auto_scaling`
-No additional arguments.
-
-### `aws_direct_connect`
-No additional arguments.
-
-### `aws_states`
-No additional arguments.
-
-### `cloudtrail`
-No additional arguments.
-
-### `dynamodb`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `ebs`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `ec2`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `ecs`
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `efs`
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `elasticache`
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `elasticsearch`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `elb`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-
-### `emr`
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `iam`
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `lambda`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `rds`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `redshift`
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `route53`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-
-### `s3`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
-
-### `sns`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-
-### `sqs`
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not.
-* `fetch_tags` - (Optional) Specify if tags should be collected.
-* `queue_prefixes` - (Optional) List of SQS queue name prefixes to monitor.
-* `tag_key` - (Optional) Tag key associated with the resources that you want to monitor.
-* `tag_value` - (Optional) Tag value associated with the resources that you want to monitor.
+### `xray`
+* `metrics_polling_interval` - (Optional) The data polling interval in seconds.
+* `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
 
 ## Attributes Reference
 
@@ -257,12 +88,14 @@ $ terraform import newrelic_cloud_aws_eu_sovereign_integrations.foo <linked_acco
 
 ## Notes
 
-* **Service Availability**: Not all AWS services are available in AWS EU Sovereign regions. Check AWS documentation for service availability in `eu-isob-east-1` and `eu-isob-west-1` regions.
+* **Limited Service Support**: EU Sovereign Cloud integration supports only four AWS services: CloudTrail, Health, Trusted Advisor, and X-Ray. These services support polling mode only via the `metrics_polling_interval` parameter.
+
+* **Polling Mode Only**: Unlike regular AWS integrations that support both PUSH (Metric Streams) and PULL (Polling) collection modes, EU Sovereign integrations use polling exclusively for data collection from the supported services.
+
+* **Service Availability**: Check AWS documentation for service availability in EU Sovereign regions (`eu-isob-east-1` and `eu-isob-west-1`).
 
 * **Regional Considerations**: When specifying `aws_regions`, ensure you're using the correct EU Sovereign region identifiers (`eu-isob-east-1`, `eu-isob-west-1`, etc.).
 
 * **Permissions**: Your AWS EU Sovereign IAM role must have appropriate permissions for each service you enable. Refer to New Relic's documentation for specific IAM policy requirements.
 
 * **Polling Intervals**: Consider the impact of polling intervals on AWS API rate limits and costs. Lower intervals provide more frequent updates but consume more API calls.
-
-* **Tag Filtering**: Use `tag_key` and `tag_value` to limit monitoring to specific resources, which can help reduce data collection costs and improve performance.

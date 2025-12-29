@@ -32,34 +32,6 @@ resource "newrelic_cloud_awsGovcloud_link_account" "account" {
 resource "newrelic_cloud_aws_govcloud_integrations" "foo" {
   account_id=3806526
   linked_account_id=newrelic_cloud_awsGovcloud_link_account.account.id
-  alb{
-    metrics_polling_interval=1000
-    aws_regions=["us-east-1"]
-    fetch_extended_inventory=true
-    fetch_tags=true
-    load_balancer_prefixes=[""]
-    tag_key=""
-    tag_value=""
-  }
-  api_gateway{
-    metrics_polling_interval=1000
-    aws_regions=[""]
-    stage_prefixes=[""]
-    tag_key=""
-    tag_value=""
-  }
-  auto_scaling{
-    metrics_polling_interval=1000
-    aws_regions=[""]
-  }
-  aws_direct_connect{
-    metrics_polling_interval=1000
-    aws_regions=[""]
-  }
-  aws_states{
-    metrics_polling_interval=1000
-    aws_regions=[""]
-  }
   cloudtrail{
     metrics_polling_interval=1000
     aws_regions=[""]
