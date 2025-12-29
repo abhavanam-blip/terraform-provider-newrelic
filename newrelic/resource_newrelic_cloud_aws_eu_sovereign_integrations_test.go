@@ -109,89 +109,28 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
 resource "newrelic_cloud_aws_eu_sovereign_integrations" "foo" {
   linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.foo.id
 
-  alb {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  api_gateway {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-  }
-
-  auto_scaling {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-  }
-
   cloudtrail {
     metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-  }
-
-  dynamodb {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
+    aws_regions              = ["eusc-de-east-1"]
     fetch_extended_inventory = true
     fetch_tags               = true
   }
 
-  ebs {
+  health {
     metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-  }
-
-  ec2 {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-  }
-
-  elasticsearch {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
     fetch_extended_inventory = true
     fetch_tags               = true
   }
 
-  elb {
+  trusted_advisor {
     metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-  }
-
-  lambda {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
     fetch_extended_inventory = true
     fetch_tags               = true
   }
 
-  rds {
+  xray {
     metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  s3 {
-    metrics_polling_interval = 3600
-    fetch_extended_inventory = true
-    fetch_tags               = true
-  }
-
-  sns {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
-    fetch_extended_inventory = true
-  }
-
-  sqs {
-    metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
+    aws_regions              = ["eusc-de-east-1"]
     fetch_extended_inventory = true
     fetch_tags               = true
   }
@@ -209,28 +148,28 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
 resource "newrelic_cloud_aws_eu_sovereign_integrations" "foo" {
   linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.foo.id
 
-  alb {
+  cloudtrail {
     metrics_polling_interval = 600
-    aws_regions              = ["eu-isob-east-1"]
+    aws_regions              = ["eusc-de-east-1"]
     fetch_extended_inventory = false
     fetch_tags               = false
   }
 
-  ec2 {
+  health {
     metrics_polling_interval = 600
-    aws_regions              = ["eu-isob-east-1"]
-    fetch_extended_inventory = false
-  }
-
-  lambda {
-    metrics_polling_interval = 600
-    aws_regions              = ["eu-isob-east-1"]
     fetch_extended_inventory = false
     fetch_tags               = false
   }
 
-  s3 {
-    metrics_polling_interval = 7200
+  trusted_advisor {
+    metrics_polling_interval = 600
+    fetch_extended_inventory = false
+    fetch_tags               = false
+  }
+
+  xray {
+    metrics_polling_interval = 600
+    aws_regions              = ["eusc-de-east-1"]
     fetch_extended_inventory = false
     fetch_tags               = false
   }

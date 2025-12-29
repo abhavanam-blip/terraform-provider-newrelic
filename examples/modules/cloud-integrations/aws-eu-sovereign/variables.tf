@@ -27,55 +27,11 @@ variable "enable_integrations" {
 }
 
 # Integration Configuration Variables
-variable "alb_integration" {
-  description = "Configuration for ALB integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-    load_balancer_prefixes   = optional(list(string), null)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "api_gateway_integration" {
-  description = "Configuration for API Gateway integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-    stage_prefixes           = optional(list(string), null)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "auto_scaling_integration" {
-  description = "Configuration for Auto Scaling integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-  })
-  default = null
-}
-
 variable "cloudtrail_integration" {
   description = "Configuration for CloudTrail integration"
   type = object({
     metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-  })
-  default = null
-}
-
-variable "dynamodb_integration" {
-  description = "Configuration for DynamoDB integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
+    aws_regions              = optional(list(string), ["eusc-de-east-1"])
     fetch_extended_inventory = optional(bool, true)
     fetch_tags               = optional(bool, true)
     tag_key                  = optional(string, null)
@@ -84,35 +40,10 @@ variable "dynamodb_integration" {
   default = null
 }
 
-variable "ebs_integration" {
-  description = "Configuration for EBS integration"
+variable "health_integration" {
+  description = "Configuration for AWS Health integration"
   type = object({
     metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "ec2_integration" {
-  description = "Configuration for EC2 integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "elasticsearch_integration" {
-  description = "Configuration for Elasticsearch integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
     fetch_extended_inventory = optional(bool, true)
     fetch_tags               = optional(bool, true)
     tag_key                  = optional(string, null)
@@ -121,22 +52,10 @@ variable "elasticsearch_integration" {
   default = null
 }
 
-variable "elb_integration" {
-  description = "Configuration for ELB integration"
+variable "trusted_advisor_integration" {
+  description = "Configuration for AWS Trusted Advisor integration"
   type = object({
     metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-  })
-  default = null
-}
-
-variable "lambda_integration" {
-  description = "Configuration for Lambda integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
     fetch_extended_inventory = optional(bool, true)
     fetch_tags               = optional(bool, true)
     tag_key                  = optional(string, null)
@@ -145,49 +64,13 @@ variable "lambda_integration" {
   default = null
 }
 
-variable "rds_integration" {
-  description = "Configuration for RDS integration"
+variable "xray_integration" {
+  description = "Configuration for AWS X-Ray integration"
   type = object({
     metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
+    aws_regions              = optional(list(string), ["eusc-de-east-1"])
     fetch_extended_inventory = optional(bool, true)
     fetch_tags               = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "s3_integration" {
-  description = "Configuration for S3 integration"
-  type = object({
-    metrics_polling_interval = optional(number, 3600)
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-    tag_key                  = optional(string, null)
-    tag_value                = optional(string, null)
-  })
-  default = null
-}
-
-variable "sns_integration" {
-  description = "Configuration for SNS integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-  })
-  default = null
-}
-
-variable "sqs_integration" {
-  description = "Configuration for SQS integration"
-  type = object({
-    metrics_polling_interval = optional(number, 300)
-    aws_regions              = optional(list(string), ["eu-isob-east-1"])
-    fetch_extended_inventory = optional(bool, true)
-    fetch_tags               = optional(bool, true)
-    queue_prefixes           = optional(list(string), null)
     tag_key                  = optional(string, null)
     tag_value                = optional(string, null)
   })

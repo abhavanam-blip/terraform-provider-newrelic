@@ -111,7 +111,7 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
 }
 
 func testAccExpectedAwsEuSovereignArn() string {
-	return fmt.Sprintf("arn:aws-eu-iso:iam::%[1]s:role/NewRelicInfrastructure-Integrations", testAccExpectedAwsEuSovereignAccountId())
+	return fmt.Sprintf("arn:aws-eusc:iam::%[1]s:role/NewRelicInfrastructure-Integrations", testAccExpectedAwsEuSovereignAccountId())
 }
 
 func testAccExpectedAwsEuSovereignAccountId() string {

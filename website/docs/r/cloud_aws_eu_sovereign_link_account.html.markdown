@@ -26,7 +26,7 @@ To use this resource effectively, you'll need:
 ```hcl
 resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
   name                   = "my-eu-sovereign-account"
-  arn                    = "arn:aws-eu-iso:iam::123456789012:role/NewRelicInfrastructure-Integrations"
+  arn                    = "arn:aws-eusc:iam::123456789012:role/NewRelicInfrastructure-Integrations"
   metric_collection_mode = "PULL"
 }
 ```
@@ -56,7 +56,7 @@ $ terraform import newrelic_cloud_aws_eu_sovereign_link_account.foo <id>
 
 ## Notes
 
-* **AWS EU Sovereign Cloud**: This resource is specifically for AWS EU Sovereign Cloud (aws-eu-iso partition) accounts. For regular AWS accounts, use `newrelic_cloud_aws_link_account`. For AWS GovCloud, use `newrelic_cloud_aws_govcloud_link_account`.
+* **AWS EU Sovereign Cloud**: This resource is specifically for AWS EU Sovereign Cloud (aws-eusc partition) accounts. For regular AWS accounts, use `newrelic_cloud_aws_link_account`. For AWS GovCloud, use `newrelic_cloud_aws_govcloud_link_account`.
 
 * **IAM Role Permissions**: Ensure your AWS EU Sovereign IAM role has the necessary permissions for the integrations you plan to enable. Refer to New Relic's documentation for specific permission requirements.
 
@@ -66,4 +66,4 @@ $ terraform import newrelic_cloud_aws_eu_sovereign_link_account.foo <id>
 
   The collection mode cannot be changed after the account is linked. If you need to change it, you must destroy and recreate the resource.
 
-* **Region Availability**: AWS EU Sovereign regions are limited compared to standard AWS regions. Ensure the services you want to monitor are available in your target EU Sovereign regions.
+* **Region Availability**: AWS EU Sovereign regions are limited compared to standard AWS regions. The primary EU Sovereign region is `eusc-de-east-1`. Ensure the services you want to monitor are available in this region.

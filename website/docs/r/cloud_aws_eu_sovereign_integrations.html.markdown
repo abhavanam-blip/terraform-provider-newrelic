@@ -23,7 +23,7 @@ See [New Relic's AWS EU Sovereign integration documentation](https://docs.newrel
 ```hcl
 resource "newrelic_cloud_aws_eu_sovereign_link_account" "account" {
   name = "my-eu-sovereign-account"
-  arn  = "arn:aws-eu-iso:iam::123456789012:role/NewRelicInfrastructure-Integrations"
+  arn  = "arn:aws-eusc:iam::123456789012:role/NewRelicInfrastructure-Integrations"
 }
 
 resource "newrelic_cloud_aws_eu_sovereign_integrations" "integrations" {
@@ -31,7 +31,7 @@ resource "newrelic_cloud_aws_eu_sovereign_integrations" "integrations" {
 
   cloudtrail {
     metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1"]
+    aws_regions              = ["eusc-de-east-1"]
   }
 
   health {
@@ -44,7 +44,7 @@ resource "newrelic_cloud_aws_eu_sovereign_integrations" "integrations" {
 
   xray {
     metrics_polling_interval = 300
-    aws_regions              = ["eu-isob-east-1", "eu-isob-west-1"]
+    aws_regions              = ["eusc-de-east-1"]
   }
 }
 ```
@@ -61,16 +61,32 @@ The following integration types are supported:
 ### `cloudtrail`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
 * `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
+* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
+* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
 ### `health`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
+* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
+* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
 ### `trusted_advisor`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
+* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
+* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
 ### `xray`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
 * `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
+* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
+* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
+* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
 ## Attributes Reference
 
@@ -92,9 +108,9 @@ $ terraform import newrelic_cloud_aws_eu_sovereign_integrations.foo <linked_acco
 
 * **Polling Mode Only**: Unlike regular AWS integrations that support both PUSH (Metric Streams) and PULL (Polling) collection modes, EU Sovereign integrations use polling exclusively for data collection from the supported services.
 
-* **Service Availability**: Check AWS documentation for service availability in EU Sovereign regions (`eu-isob-east-1` and `eu-isob-west-1`).
+* **Service Availability**: Check AWS documentation for service availability in the EU Sovereign region (`eusc-de-east-1`).
 
-* **Regional Considerations**: When specifying `aws_regions`, ensure you're using the correct EU Sovereign region identifiers (`eu-isob-east-1`, `eu-isob-west-1`, etc.).
+* **Regional Considerations**: When specifying `aws_regions`, ensure you're using the correct EU Sovereign region identifier (`eusc-de-east-1`).
 
 * **Permissions**: Your AWS EU Sovereign IAM role must have appropriate permissions for each service you enable. Refer to New Relic's documentation for specific IAM policy requirements.
 
