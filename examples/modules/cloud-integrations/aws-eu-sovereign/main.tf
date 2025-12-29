@@ -206,7 +206,7 @@ resource "aws_kinesis_firehose_delivery_stream" "newrelic_firehose_stream" {
   name        = "newrelic_firehose_stream_${var.account_name}"
   destination = "http_endpoint"
   http_endpoint_configuration {
-    url                = "https://eu-aws-api.newrelic.com/cloudwatch-metrics/v1"  # Updated for EU Sovereign endpoint
+    url                = "https://api.newrelic.com/cloudwatch-metrics/v1"
     name               = "New Relic ${var.account_name}"
     access_key         = newrelic_api_access_key.newrelic_aws_access_key.key
     buffering_size     = 1
