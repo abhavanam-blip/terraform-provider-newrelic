@@ -15,6 +15,12 @@ terraform {
   }
 }
 
+provider "newrelic" {
+  account_id = var.newrelic_account_id
+  api_key    = var.newrelic_api_key
+  region     = var.newrelic_account_region
+}
+
 data "aws_iam_policy_document" "newrelic_assume_policy" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -38,6 +44,8 @@ locals {
     US = "https://aws-api.newrelic.com/cloudwatch-metrics/v1"
     EU = "https://aws-api.eu01.nr-data.net/cloudwatch-metrics/v1"
   }
+  enable_push_resources = contains(["PUSH", "BOTH"], var.metric_collection_mode)
+  enable_pull_resources = contains(["PULL", "BOTH"], var.metric_collection_mode)
 }
 
 resource "aws_iam_role" "newrelic_aws_role" {
@@ -98,6 +106,7 @@ resource "aws_iam_role_policy_attachment" "readonly_access_policy_attach" {
 
 # PUSH mode integration - Primary method with metric streaming
 resource "newrelic_cloud_aws_eu_sovereign_link_account" "this" {
+  count                  = local.enable_push_resources ? 1 : 0
   name                   = var.name
   arn                    = aws_iam_role.newrelic_aws_role.arn
   metric_collection_mode = "PUSH"
@@ -105,6 +114,7 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "this" {
 }
 
 resource "newrelic_api_access_key" "newrelic_aws_access_key" {
+  count       = local.enable_push_resources ? 1 : 0
   account_id  = var.newrelic_account_id
   key_type    = "INGEST"
   ingest_type = "LICENSE"
@@ -113,7 +123,8 @@ resource "newrelic_api_access_key" "newrelic_aws_access_key" {
 }
 
 resource "aws_iam_role" "firehose_newrelic_role" {
-  name = "firehose_newrelic_role_${var.name}"
+  count = local.enable_push_resources ? 1 : 0
+  name  = "firehose_newrelic_role_${var.name}"
 
   assume_role_policy = <<EOF
 {
@@ -133,42 +144,47 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "readonly_access_policy_attach_2" {
-  role       = aws_iam_role.firehose_newrelic_role.name
+  count      = local.enable_push_resources ? 1 : 0
+  role       = aws_iam_role.firehose_newrelic_role[0].name
   policy_arn = "arn:aws-eusc:iam::aws:policy/ReadOnlyAccess"
 }
 
 resource "random_string" "s3-bucket-name" {
+  count   = local.enable_push_resources ? 1 : 0
   length  = 8
   special = false
   upper   = false
 }
 
 resource "aws_s3_bucket" "newrelic_aws_bucket" {
-  bucket        = "newrelic-aws-bucket-${random_string.s3-bucket-name.id}"
+  count         = local.enable_push_resources ? 1 : 0
+  bucket        = "newrelic-aws-bucket-${random_string.s3-bucket-name[0].id}"
   force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "newrelic_ownership_controls" {
-  bucket = aws_s3_bucket.newrelic_aws_bucket.id
+  count  = local.enable_push_resources ? 1 : 0
+  bucket = aws_s3_bucket.newrelic_aws_bucket[0].id
   rule {
     object_ownership = "BucketOwnerEnforced"
   }
 }
 
 resource "aws_kinesis_firehose_delivery_stream" "newrelic_firehose_stream" {
+  count       = local.enable_push_resources ? 1 : 0
   name        = "newrelic_firehose_stream_${var.name}"
   destination = "http_endpoint"
   http_endpoint_configuration {
     url                = local.newrelic_urls[var.newrelic_account_region]
     name               = "New Relic ${var.name}"
-    access_key         = newrelic_api_access_key.newrelic_aws_access_key.key
+    access_key         = newrelic_api_access_key.newrelic_aws_access_key[0].key
     buffering_size     = 1
     buffering_interval = 60
-    role_arn           = aws_iam_role.firehose_newrelic_role.arn
+    role_arn           = aws_iam_role.firehose_newrelic_role[0].arn
     s3_backup_mode     = "FailedDataOnly"
     s3_configuration {
-      role_arn           = aws_iam_role.firehose_newrelic_role.arn
-      bucket_arn         = aws_s3_bucket.newrelic_aws_bucket.arn
+      role_arn           = aws_iam_role.firehose_newrelic_role[0].arn
+      bucket_arn         = aws_s3_bucket.newrelic_aws_bucket[0].arn
       buffering_size     = 10
       buffering_interval = 400
       compression_format = "GZIP"
@@ -180,7 +196,8 @@ resource "aws_kinesis_firehose_delivery_stream" "newrelic_firehose_stream" {
 }
 
 resource "aws_iam_role" "metric_stream_to_firehose" {
-  name = "newrelic_metric_stream_to_firehose_role_${var.name}"
+  count = local.enable_push_resources ? 1 : 0
+  name  = "newrelic_metric_stream_to_firehose_role_${var.name}"
 
   assume_role_policy = <<EOF
 {
@@ -200,8 +217,9 @@ EOF
 }
 
 resource "aws_iam_role_policy" "metric_stream_to_firehose" {
-  name = "default"
-  role = aws_iam_role.metric_stream_to_firehose.id
+  count = local.enable_push_resources ? 1 : 0
+  name  = "default"
+  role  = aws_iam_role.metric_stream_to_firehose[0].id
 
   policy = <<EOF
 {
@@ -213,7 +231,7 @@ resource "aws_iam_role_policy" "metric_stream_to_firehose" {
                 "firehose:PutRecord",
                 "firehose:PutRecordBatch"
             ],
-            "Resource": "${aws_kinesis_firehose_delivery_stream.newrelic_firehose_stream.arn}"
+            "Resource": "${aws_kinesis_firehose_delivery_stream.newrelic_firehose_stream[0].arn}"
         }
     ]
 }
@@ -221,9 +239,10 @@ EOF
 }
 
 resource "aws_cloudwatch_metric_stream" "newrelic_metric_stream" {
+  count         = local.enable_push_resources ? 1 : 0
   name          = "newrelic-metric-stream-${var.name}"
-  role_arn      = aws_iam_role.metric_stream_to_firehose.arn
-  firehose_arn  = aws_kinesis_firehose_delivery_stream.newrelic_firehose_stream.arn
+  role_arn      = aws_iam_role.metric_stream_to_firehose[0].arn
+  firehose_arn  = aws_kinesis_firehose_delivery_stream.newrelic_firehose_stream[0].arn
   output_format = var.output_format
 
   dynamic "exclude_filter" {
@@ -245,6 +264,7 @@ resource "aws_cloudwatch_metric_stream" "newrelic_metric_stream" {
 
 # PULL mode integration for 4 specific services
 resource "newrelic_cloud_aws_eu_sovereign_link_account" "newrelic_cloud_integration_pull" {
+  count                  = local.enable_pull_resources ? 1 : 0
   name                   = "${var.name} pull"
   arn                    = aws_iam_role.newrelic_aws_role.arn
   metric_collection_mode = "PULL"
@@ -252,7 +272,8 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "newrelic_cloud_integrat
 }
 
 resource "newrelic_cloud_aws_eu_sovereign_integrations" "newrelic_cloud_integration_pull" {
-  linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.newrelic_cloud_integration_pull.id
+  count             = local.enable_pull_resources ? 1 : 0
+  linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.newrelic_cloud_integration_pull[0].id
 
   # PULL mode for 4 specific services only
   cloudtrail {}
@@ -265,10 +286,17 @@ locals {
   should_create_recorder = var.enable_config_recorder
 }
 
+resource "random_string" "config-bucket-name" {
+  count   = local.should_create_recorder ? 1 : 0
+  length  = 8
+  special = false
+  upper   = false
+}
+
 # AWS Config setup for comprehensive monitoring
 resource "aws_s3_bucket" "newrelic_configuration_recorder_s3" {
   count         = local.should_create_recorder ? 1 : 0
-  bucket        = "newrelic-configuration-recorder-${random_string.s3-bucket-name.id}"
+  bucket        = "newrelic-configuration-recorder-${random_string.config-bucket-name[0].id}"
   force_destroy = true
 }
 

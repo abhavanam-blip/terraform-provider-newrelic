@@ -3,6 +3,13 @@ variable "newrelic_account_id" {
   type        = string
 }
 
+variable "newrelic_api_key" {
+  description = "New Relic API Key (can also be set via NEW_RELIC_API_KEY environment variable)"
+  type        = string
+  default     = null
+  sensitive   = true
+}
+
 variable "newrelic_account_region" {
   type    = string
   default = "US"
@@ -45,5 +52,15 @@ variable "enable_config_recorder" {
   description = "Set to true to enable AWS Configuration Recorder."
   type        = bool
   default     = true
+}
+
+variable "metric_collection_mode" {
+  description = "How metrics are collected. 'PUSH' for streaming only, 'PULL' for polling only, or 'BOTH' for both methods."
+  type        = string
+  default     = "BOTH"
+  validation {
+    condition     = contains(["PULL", "PUSH", "BOTH"], var.metric_collection_mode)
+    error_message = "metric_collection_mode must be 'PULL', 'PUSH', or 'BOTH'."
+  }
 }
 
