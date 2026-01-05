@@ -66,9 +66,10 @@ func resourceNewRelicCloudAwsEuSovereignIntegrations() *schema.Resource {
 }
 
 func resourceNewRelicCloudAwsEuSovereignIntegrationsCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
 
-	accountID := selectAccountID(meta, d)
+	accountID := selectAccountID(providerConfig, d)
 	linkedAccountID := d.Get("linked_account_id").(int)
 
 	configureInput := expandCloudAwsEuSovereignIntegrationsInput(d, linkedAccountID)
@@ -80,30 +81,24 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsCreate(ctx context.Context, 
 		return diag.FromErr(err)
 	}
 
-	var integrationIds []string
-	for _, integration := range cloudConfigureIntegration.Integrations {
-		integrationIds = append(integrationIds, strconv.Itoa(integration.Id))
+	if len(cloudConfigureIntegration.Integrations) > 0 {
+		d.SetId(strconv.Itoa(linkedAccountID))
 	}
-
-	d.SetId(buildCompositeID(integrationIds))
 
 	return resourceNewRelicCloudAwsEuSovereignIntegrationsRead(ctx, d, meta)
 }
 
 func resourceNewRelicCloudAwsEuSovereignIntegrationsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
 
-	accountID := selectAccountID(meta, d)
+	accountID := selectAccountID(providerConfig, d)
 	linkedAccountID := d.Get("linked_account_id").(int)
 
 	log.Printf("[INFO] Reading New Relic AWS EU Sovereign integration for linked account %d", linkedAccountID)
 
 	linkedAccount, err := client.Cloud.GetLinkedAccount(accountID, linkedAccountID)
 	if err != nil {
-		if _, ok := err.(*cloud.NotFoundError); ok {
-			d.SetId("")
-			return nil
-		}
 		return diag.FromErr(err)
 	}
 
@@ -111,8 +106,9 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsRead(ctx context.Context, d 
 }
 
 func resourceNewRelicCloudAwsEuSovereignIntegrationsUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
-	accountID := selectAccountID(meta, d)
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
+	accountID := selectAccountID(providerConfig, d)
 	linkedAccountID := d.Get("linked_account_id").(int)
 
 	configureInput := expandCloudAwsEuSovereignIntegrationsInput(d, linkedAccountID)
@@ -128,9 +124,10 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsUpdate(ctx context.Context, 
 }
 
 func resourceNewRelicCloudAwsEuSovereignIntegrationsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
 
-	accountID := selectAccountID(meta, d)
+	accountID := selectAccountID(providerConfig, d)
 	linkedAccountID := d.Get("linked_account_id").(int)
 
 	disableInput := expandCloudAwsEuSovereignDisableIntegrationsInput(d, linkedAccountID)
@@ -287,4 +284,82 @@ func cloudAwsEuSovereignIntegrationsXrayElem() *schema.Resource {
 			},
 		},
 	}
+}
+
+// expandCloudAwsEuSovereignIntegrationsInput expands the schema data for EU SOV integrations (4 supported services)
+func expandCloudAwsEuSovereignIntegrationsInput(d *schema.ResourceData, linkedAccountID int) cloud.CloudIntegrationsInput {
+	awsInput := cloud.CloudAwsIntegrationsInput{}
+
+	// EU SOV supports only 4 services
+	if v, ok := d.GetOk("cloudtrail"); ok {
+		awsInput.Cloudtrail = expandCloudAwsIntegrationCloudtrailInput(v.([]interface{}), linkedAccountID)
+	}
+
+	if v, ok := d.GetOk("health"); ok {
+		awsInput.Health = expandCloudAwsIntegrationHealthInput(v.([]interface{}), linkedAccountID)
+	}
+
+	if v, ok := d.GetOk("trusted_advisor"); ok {
+		awsInput.Trustedadvisor = expandCloudAwsIntegrationTrustedAdvisorInput(v.([]interface{}), linkedAccountID)
+	}
+
+	if v, ok := d.GetOk("xray"); ok {
+		awsInput.AwsXray = expandCloudAwsIntegrationXRayInput(v.([]interface{}), linkedAccountID)
+	}
+
+	input := cloud.CloudIntegrationsInput{
+		Aws: awsInput,
+	}
+
+	return input
+}
+
+// expandCloudAwsEuSovereignDisableIntegrationsInput expands the schema data for disabling EU SOV integrations
+func expandCloudAwsEuSovereignDisableIntegrationsInput(d *schema.ResourceData, linkedAccountID int) cloud.CloudDisableIntegrationsInput {
+	awsInput := cloud.CloudAwsDisableIntegrationsInput{}
+
+	// EU SOV supports only 4 services
+	if _, ok := d.GetOk("cloudtrail"); ok {
+		awsInput.Cloudtrail = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
+	}
+
+	if _, ok := d.GetOk("health"); ok {
+		awsInput.Health = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
+	}
+
+	if _, ok := d.GetOk("trusted_advisor"); ok {
+		awsInput.Trustedadvisor = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
+	}
+
+	if _, ok := d.GetOk("xray"); ok {
+		awsInput.AwsXray = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
+	}
+
+	input := cloud.CloudDisableIntegrationsInput{
+		Aws: awsInput,
+	}
+
+	return input
+}
+
+// flattenCloudAwsEuSovereignIntegrations flattens EU SOV integrations data from the API into the schema
+func flattenCloudAwsEuSovereignIntegrations(linkedAccount *cloud.CloudLinkedAccount, accountID int, d *schema.ResourceData) error {
+	_ = d.Set("account_id", accountID)
+	_ = d.Set("linked_account_id", linkedAccount.ID)
+
+	// EU SOV supports only 4 services - use regular AWS integration flatten functions
+	for _, integration := range linkedAccount.Integrations {
+		switch t := integration.(type) {
+		case *cloud.CloudCloudtrailIntegration:
+			_ = d.Set("cloudtrail", flattenCloudAwsCloudTrailIntegration(t))
+		case *cloud.CloudHealthIntegration:
+			_ = d.Set("health", flattenCloudAwsHealthIntegration(t))
+		case *cloud.CloudTrustedadvisorIntegration:
+			_ = d.Set("trusted_advisor", flattenCloudAwsTrustedAdvisorIntegration(t))
+		case *cloud.CloudAwsXrayIntegration:
+			_ = d.Set("xray", flattenCloudAwsXRayIntegration(t))
+		}
+	}
+
+	return nil
 }

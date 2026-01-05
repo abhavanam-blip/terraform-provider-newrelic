@@ -2,25 +2,6 @@
 # This module creates a New Relic AWS EU Sovereign cloud integration with commonly used services
 # Supports both US and EU New Relic regions via the newrelic_account_region variable
 
-terraform {
-  required_providers {
-    newrelic = {
-      source  = "newrelic/newrelic"
-      version = "~> 3.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
-  }
-}
-
-provider "newrelic" {
-  account_id = var.newrelic_account_id
-  api_key    = var.newrelic_api_key
-  region     = var.newrelic_account_region
-}
-
 data "aws_iam_policy_document" "newrelic_assume_policy" {
   statement {
     actions = ["sts:AssumeRole"]

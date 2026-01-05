@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/newrelic/newrelic-client-go/v2/pkg/cloud"
+	"github.com/newrelic/newrelic-client-go/v2/pkg/errors"
 )
 
 func resourceNewRelicCloudAwsEuSovereignLinkAccount() *schema.Resource {
@@ -51,8 +52,9 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccount() *schema.Resource {
 }
 
 func resourceNewRelicCloudAwsEuSovereignLinkAccountCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
-	accountID := selectAccountID(meta, d)
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
+	accountID := selectAccountID(providerConfig, d)
 
 	createInput := expandAwsEuSovereignLinkAccountInputForCreate(d)
 
@@ -65,7 +67,7 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountCreate(ctx context.Context, d
 
 	var linkedAccountID int
 	for _, linkedAccount := range cloudLinkedAccount.LinkedAccounts {
-		linkedAccountID = linkedAccount.Id
+		linkedAccountID = linkedAccount.ID
 		break
 	}
 
@@ -75,9 +77,10 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountCreate(ctx context.Context, d
 }
 
 func resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
 
-	accountID := selectAccountID(meta, d)
+	accountID := selectAccountID(providerConfig, d)
 
 	linkedAccountID, convErr := strconv.Atoi(d.Id())
 	if convErr != nil {
@@ -88,7 +91,7 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx context.Context, d *
 
 	linkedAccount, err := client.Cloud.GetLinkedAccount(accountID, linkedAccountID)
 	if err != nil {
-		if _, ok := err.(*cloud.NotFoundError); ok {
+		if _, ok := err.(*errors.NotFound); ok {
 			d.SetId("")
 			return nil
 		}
@@ -99,8 +102,9 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx context.Context, d *
 }
 
 func resourceNewRelicCloudAwsEuSovereignLinkAccountUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
-	accountID := selectAccountID(meta, d)
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
+	accountID := selectAccountID(providerConfig, d)
 
 	linkedAccountID, convErr := strconv.Atoi(d.Id())
 	if convErr != nil {
@@ -111,7 +115,7 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountUpdate(ctx context.Context, d
 
 	log.Printf("[INFO] Updating New Relic AWS EU Sovereign link account %d", linkedAccountID)
 
-	_, err := client.Cloud.CloudUpdateAccountWithContext(ctx, accountID, updateInput)
+	_, err := client.Cloud.CloudRenameAccountWithContext(ctx, accountID, updateInput)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -120,14 +124,17 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountUpdate(ctx context.Context, d
 }
 
 func resourceNewRelicCloudAwsEuSovereignLinkAccountDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).NewClient
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
 
-	accountID := selectAccountID(meta, d)
+	accountID := selectAccountID(providerConfig, d)
 
-	linkedAccountID := getLinkedAccountIDFromState(d)
+	linkedAccountID := getEuSovereignLinkedAccountIDFromState(d)
 
-	unlinkInput := cloud.CloudUnlinkAccountsInput{
-		LinkedAccountIds: []int{linkedAccountID},
+	unlinkInput := []cloud.CloudUnlinkAccountsInput{
+		{
+			LinkedAccountId: linkedAccountID,
+		},
 	}
 
 	log.Printf("[INFO] Unlinking New Relic AWS EU Sovereign link account %d", linkedAccountID)
