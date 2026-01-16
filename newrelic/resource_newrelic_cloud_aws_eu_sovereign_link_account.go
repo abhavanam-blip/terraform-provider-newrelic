@@ -1,0 +1,162 @@
+package newrelic
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"strconv"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/newrelic/newrelic-client-go/v2/pkg/cloud"
+)
+
+func resourceNewRelicCloudAwsEuSovereignLinkAccount() *schema.Resource {
+	return &schema.Resource{
+		CreateContext: resourceNewRelicCloudAwsEuSovereignLinkAccountCreate,
+		ReadContext:   resourceNewRelicCloudAwsEuSovereignLinkAccountRead,
+		UpdateContext: resourceNewRelicCloudAwsEuSovereignLinkAccountUpdate,
+		DeleteContext: resourceNewRelicCloudAwsEuSovereignLinkAccountDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Schema: map[string]*schema.Schema{
+			"account_id": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+				Description: "The ID of the account in New Relic.",
+			},
+			"name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the AWS EU Sovereign account in New Relic.",
+			},
+			"metric_collection_mode": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "PULL",
+				ForceNew:     true,
+				Description:  "How metrics are collected. PULL or PUSH.",
+				ValidateFunc: validation.StringInSlice([]string{"PULL", "PUSH"}, false),
+			},
+			"arn": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The ARN of the IAM role.",
+			},
+		},
+	}
+}
+
+func resourceNewRelicCloudAwsEuSovereignLinkAccountCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
+	accountID := selectAccountID(providerConfig, d)
+
+	createInput := expandAwsEuSovereignLinkAccountInputForCreate(d)
+
+	log.Printf("[INFO] Creating New Relic AWS EU Sovereign link account %s", d.Get("name"))
+
+	cloudLinkedAccount, err := client.Cloud.CloudLinkAccountWithContext(ctx, accountID, createInput)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf("[DEBUG] CloudLinkAccount response: LinkedAccounts=%d, Errors=%d", len(cloudLinkedAccount.LinkedAccounts), len(cloudLinkedAccount.Errors))
+
+	var diags diag.Diagnostics
+	if len(cloudLinkedAccount.Errors) > 0 {
+		for _, err := range cloudLinkedAccount.Errors {
+			log.Printf("[ERROR] CloudLinkAccount error: Type=%s, Message=%s", err.Type, err.Message)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  err.Type + " " + err.Message,
+			})
+		}
+		return diags
+	}
+
+	var linkedAccountID int
+	for _, linkedAccount := range cloudLinkedAccount.LinkedAccounts {
+		log.Printf("[DEBUG] LinkedAccount found: ID=%d, Name=%s", linkedAccount.ID, linkedAccount.Name)
+		linkedAccountID = linkedAccount.ID
+		break
+	}
+
+	if linkedAccountID == 0 {
+		return diag.FromErr(fmt.Errorf("failed to create AWS EU Sovereign linked account: no linked account ID returned"))
+	}
+
+	d.SetId(strconv.Itoa(linkedAccountID))
+
+	return resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx, d, meta)
+}
+
+func resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
+
+	accountID := selectAccountID(providerConfig, d)
+
+	linkedAccountID, convErr := strconv.Atoi(d.Id())
+	if convErr != nil {
+		return diag.FromErr(convErr)
+	}
+
+	log.Printf("[INFO] Reading New Relic AWS EU Sovereign link account %d", linkedAccountID)
+
+	linkedAccount, err := client.Cloud.GetLinkedAccount(accountID, linkedAccountID)
+	if err != nil {
+		d.SetId("")
+		return nil
+	}
+
+	return diag.FromErr(flattenAwsEuSovereignLinkAccountForRead(linkedAccount, d, accountID))
+}
+
+func resourceNewRelicCloudAwsEuSovereignLinkAccountUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
+	accountID := selectAccountID(providerConfig, d)
+
+	linkedAccountID, convErr := strconv.Atoi(d.Id())
+	if convErr != nil {
+		return diag.FromErr(convErr)
+	}
+
+	updateInput := expandAwsEuSovereignLinkAccountInputForUpdate(d, linkedAccountID)
+
+	log.Printf("[INFO] Updating New Relic AWS EU Sovereign link account %d", linkedAccountID)
+
+	_, err := client.Cloud.CloudUpdateAccountWithContext(ctx, accountID, updateInput)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx, d, meta)
+}
+
+func resourceNewRelicCloudAwsEuSovereignLinkAccountDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	providerConfig := meta.(*ProviderConfig)
+	client := providerConfig.NewClient
+
+	accountID := selectAccountID(providerConfig, d)
+
+	linkedAccountID, _ := strconv.Atoi(d.Id())
+
+	unlinkInput := []cloud.CloudUnlinkAccountsInput{
+		{LinkedAccountId: linkedAccountID},
+	}
+
+	log.Printf("[INFO] Unlinking New Relic AWS EU Sovereign link account %d", linkedAccountID)
+
+	_, err := client.Cloud.CloudUnlinkAccountWithContext(ctx, accountID, unlinkInput)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
+}
