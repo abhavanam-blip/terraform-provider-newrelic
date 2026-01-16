@@ -1,66 +1,45 @@
+# Required Variables
 variable "newrelic_account_id" {
   description = "The New Relic account ID"
-  type        = string
-}
-
-variable "newrelic_api_key" {
-  description = "New Relic API Key (can also be set via NEW_RELIC_API_KEY environment variable)"
-  type        = string
-  default     = null
-  sensitive   = true
-}
-
-variable "newrelic_account_region" {
-  type    = string
-  default = "US"
-
-  validation {
-    condition     = contains(["US", "EU"], var.newrelic_account_region)
-    error_message = "Valid values for region are 'US' or 'EU'."
-  }
+  type        = number
 }
 
 variable "name" {
-  type    = string
-  default = "production"
-}
-
-variable "exclude_metric_filters" {
-  description = "Map of exclusive metric filters. Use the namespace as the key and the list of metric names as the value."
-  type        = map(list(string))
-  default     = {}
-}
-
-variable "include_metric_filters" {
-  description = "Map of inclusive metric filters. Use the namespace as the key and the list of metric names as the value."
-  type        = map(list(string))
-  default     = {}
-}
-
-variable "output_format" {
-  description = "The output format for the CloudWatch metric stream"
+  description = "The name for the AWS EU Sovereign integration resources"
   type        = string
-  default     = "opentelemetry0.7"
+}
+
+# Optional Variables
+variable "newrelic_region" {
+  description = "The New Relic region. EU Sovereign only supports EU region."
+  type        = string
+  default     = "EU"
 
   validation {
-    condition     = contains(["opentelemetry0.7", "opentelemetry1.0"], var.output_format)
-    error_message = "The output_format must be either 'opentelemetry0.7' or 'opentelemetry1.0'."
+    condition     = var.newrelic_region == "EU"
+    error_message = "EU Sovereign integrations only support the EU region."
   }
 }
 
-variable "enable_config_recorder" {
-  description = "Set to true to enable AWS Configuration Recorder."
-  type        = bool
-  default     = true
+variable "aws_region" {
+  description = "The AWS EU Sovereign region"
+  type        = string
+  default     = "eusc-de-east-1"
 }
 
 variable "metric_collection_mode" {
-  description = "How metrics are collected. 'PUSH' for streaming only, 'PULL' for polling only, or 'BOTH' for both methods."
+  description = "How metrics are collected. Either PULL or PUSH"
   type        = string
-  default     = "BOTH"
+  default     = "PUSH"
   validation {
-    condition     = contains(["PULL", "PUSH", "BOTH"], var.metric_collection_mode)
-    error_message = "metric_collection_mode must be 'PULL', 'PUSH', or 'BOTH'."
+    condition     = contains(["PULL", "PUSH"], var.metric_collection_mode)
+    error_message = "metric_collection_mode must be either 'PULL' or 'PUSH'."
   }
+}
+
+variable "enable_integrations" {
+  description = "Whether to enable AWS integrations"
+  type        = bool
+  default     = true
 }
 

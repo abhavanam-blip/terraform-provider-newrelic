@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
       version = "~> 6.0"
     }
     newrelic = {
@@ -17,7 +17,9 @@ provider "newrelic" {
 }
 
 provider "aws" {
-  region = "eusc-de-east-1"  # EU Sovereign region
-  # Credentials can be set via AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables
+  region                      = "eusc-de-east-1"
+  skip_region_validation      = true   # eusc-de-east-1 is not a standard AWS region
+  skip_credentials_validation = true   # STS endpoint not available at standard URL
+  skip_requesting_account_id  = true   # S3 Control API not supported in EU Sovereign
 }
 

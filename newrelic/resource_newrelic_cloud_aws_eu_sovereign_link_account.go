@@ -2,6 +2,7 @@ package newrelic
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/newrelic/newrelic-client-go/v2/pkg/cloud"
-	"github.com/newrelic/newrelic-client-go/v2/pkg/errors"
 )
 
 func resourceNewRelicCloudAwsEuSovereignLinkAccount() *schema.Resource {
@@ -65,10 +65,29 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountCreate(ctx context.Context, d
 		return diag.FromErr(err)
 	}
 
+	log.Printf("[DEBUG] CloudLinkAccount response: LinkedAccounts=%d, Errors=%d", len(cloudLinkedAccount.LinkedAccounts), len(cloudLinkedAccount.Errors))
+
+	var diags diag.Diagnostics
+	if len(cloudLinkedAccount.Errors) > 0 {
+		for _, err := range cloudLinkedAccount.Errors {
+			log.Printf("[ERROR] CloudLinkAccount error: Type=%s, Message=%s", err.Type, err.Message)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  err.Type + " " + err.Message,
+			})
+		}
+		return diags
+	}
+
 	var linkedAccountID int
 	for _, linkedAccount := range cloudLinkedAccount.LinkedAccounts {
+		log.Printf("[DEBUG] LinkedAccount found: ID=%d, Name=%s", linkedAccount.ID, linkedAccount.Name)
 		linkedAccountID = linkedAccount.ID
 		break
+	}
+
+	if linkedAccountID == 0 {
+		return diag.FromErr(fmt.Errorf("failed to create AWS EU Sovereign linked account: no linked account ID returned"))
 	}
 
 	d.SetId(strconv.Itoa(linkedAccountID))
@@ -91,11 +110,8 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx context.Context, d *
 
 	linkedAccount, err := client.Cloud.GetLinkedAccount(accountID, linkedAccountID)
 	if err != nil {
-		if _, ok := err.(*errors.NotFound); ok {
-			d.SetId("")
-			return nil
-		}
-		return diag.FromErr(err)
+		d.SetId("")
+		return nil
 	}
 
 	return diag.FromErr(flattenAwsEuSovereignLinkAccountForRead(linkedAccount, d, accountID))
@@ -115,7 +131,7 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountUpdate(ctx context.Context, d
 
 	log.Printf("[INFO] Updating New Relic AWS EU Sovereign link account %d", linkedAccountID)
 
-	_, err := client.Cloud.CloudRenameAccountWithContext(ctx, accountID, updateInput)
+	_, err := client.Cloud.CloudUpdateAccountWithContext(ctx, accountID, updateInput)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -129,12 +145,10 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountDelete(ctx context.Context, d
 
 	accountID := selectAccountID(providerConfig, d)
 
-	linkedAccountID := getEuSovereignLinkedAccountIDFromState(d)
+	linkedAccountID, _ := strconv.Atoi(d.Id())
 
 	unlinkInput := []cloud.CloudUnlinkAccountsInput{
-		{
-			LinkedAccountId: linkedAccountID,
-		},
+		{LinkedAccountId: linkedAccountID},
 	}
 
 	log.Printf("[INFO] Unlinking New Relic AWS EU Sovereign link account %d", linkedAccountID)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/newrelic/newrelic-client-go/v2/pkg/cloud"
 )
 
 func resourceNewRelicCloudAwsEuSovereignIntegrations() *schema.Resource {
@@ -33,33 +32,34 @@ func resourceNewRelicCloudAwsEuSovereignIntegrations() *schema.Resource {
 				ForceNew:    true,
 				Description: "The ID of the linked AWS EU Sovereign account in New Relic.",
 			},
+			// EU Sovereign only supports 4 integrations: cloudtrail, xray, health, trustedadvisor
 			"cloudtrail": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "CloudTrail",
+				Description: "CloudTrail integration",
 				Elem:        cloudAwsEuSovereignIntegrationsCloudtrailElem(),
 			},
 			"health": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "AWS Health",
+				Description: "Health integration",
 				Elem:        cloudAwsEuSovereignIntegrationsHealthElem(),
 			},
 			"trusted_advisor": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "AWS Trusted Advisor",
+				Description: "Trusted Advisor integration",
 				Elem:        cloudAwsEuSovereignIntegrationsTrustedAdvisorElem(),
 			},
-			"xray": {
+			"x_ray": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Description: "AWS X-Ray",
-				Elem:        cloudAwsEuSovereignIntegrationsXrayElem(),
+				Description: "X-Ray integration",
+				Elem:        cloudAwsEuSovereignIntegrationsXRayElem(),
 			},
 		},
 	}
@@ -76,14 +76,28 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsCreate(ctx context.Context, 
 
 	log.Printf("[INFO] Creating New Relic AWS EU Sovereign integration for linked account %d", linkedAccountID)
 
-	cloudConfigureIntegration, err := client.Cloud.CloudConfigureIntegrationWithContext(ctx, accountID, configureInput)
+	payload, err := client.Cloud.CloudConfigureIntegrationWithContext(ctx, accountID, configureInput)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if len(cloudConfigureIntegration.Integrations) > 0 {
-		d.SetId(strconv.Itoa(linkedAccountID))
+	var diags diag.Diagnostics
+
+	if len(payload.Errors) > 0 {
+		for _, err := range payload.Errors {
+			log.Printf("[ERROR] CloudConfigureIntegration error: Type=%s, Message=%s", err.Type, err.Message)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  err.Type + " " + err.Message,
+			})
+		}
+		return diags
 	}
+
+	log.Printf("[DEBUG] CloudConfigureIntegration response: Integrations=%d", len(payload.Integrations))
+
+	// Set ID using linked account ID
+	d.SetId(strconv.Itoa(linkedAccountID))
 
 	return resourceNewRelicCloudAwsEuSovereignIntegrationsRead(ctx, d, meta)
 }
@@ -99,7 +113,8 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsRead(ctx context.Context, d 
 
 	linkedAccount, err := client.Cloud.GetLinkedAccount(accountID, linkedAccountID)
 	if err != nil {
-		return diag.FromErr(err)
+		d.SetId("")
+		return nil
 	}
 
 	return diag.FromErr(flattenCloudAwsEuSovereignIntegrations(linkedAccount, accountID, d))
@@ -115,9 +130,22 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsUpdate(ctx context.Context, 
 
 	log.Printf("[INFO] Updating New Relic AWS EU Sovereign integration for linked account %d", linkedAccountID)
 
-	_, err := client.Cloud.CloudConfigureIntegrationWithContext(ctx, accountID, configureInput)
+	payload, err := client.Cloud.CloudConfigureIntegrationWithContext(ctx, accountID, configureInput)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	var diags diag.Diagnostics
+
+	if len(payload.Errors) > 0 {
+		for _, err := range payload.Errors {
+			log.Printf("[ERROR] CloudConfigureIntegration error: Type=%s, Message=%s", err.Type, err.Message)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  err.Type + " " + err.Message,
+			})
+		}
+		return diags
 	}
 
 	return resourceNewRelicCloudAwsEuSovereignIntegrationsRead(ctx, d, meta)
@@ -134,15 +162,28 @@ func resourceNewRelicCloudAwsEuSovereignIntegrationsDelete(ctx context.Context, 
 
 	log.Printf("[INFO] Deleting New Relic AWS EU Sovereign integration for linked account %d", linkedAccountID)
 
-	_, err := client.Cloud.CloudDisableIntegrationWithContext(ctx, accountID, disableInput)
+	payload, err := client.Cloud.CloudDisableIntegrationWithContext(ctx, accountID, disableInput)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	var diags diag.Diagnostics
+
+	if len(payload.Errors) > 0 {
+		for _, err := range payload.Errors {
+			log.Printf("[ERROR] CloudDisableIntegration error: Type=%s, Message=%s", err.Type, err.Message)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  err.Type + " " + err.Message,
+			})
+		}
+		return diags
 	}
 
 	return nil
 }
 
-// CloudTrail integration schema element
+// CloudTrail integration schema
 func cloudAwsEuSovereignIntegrationsCloudtrailElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -157,31 +198,11 @@ func cloudAwsEuSovereignIntegrationsCloudtrailElem() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "Specify each AWS region that includes the resources that you want to monitor",
 			},
-			"fetch_extended_inventory": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"fetch_tags": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"tag_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
-			"tag_value": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
 		},
 	}
 }
 
-// AWS Health integration schema element
+// Health integration schema
 func cloudAwsEuSovereignIntegrationsHealthElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -190,31 +211,11 @@ func cloudAwsEuSovereignIntegrationsHealthElem() *schema.Resource {
 				Optional:    true,
 				Description: "The data polling interval in seconds",
 			},
-			"fetch_extended_inventory": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"fetch_tags": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"tag_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
-			"tag_value": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
 		},
 	}
 }
 
-// AWS Trusted Advisor integration schema element
+// Trusted Advisor integration schema
 func cloudAwsEuSovereignIntegrationsTrustedAdvisorElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -223,32 +224,12 @@ func cloudAwsEuSovereignIntegrationsTrustedAdvisorElem() *schema.Resource {
 				Optional:    true,
 				Description: "The data polling interval in seconds",
 			},
-			"fetch_extended_inventory": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"fetch_tags": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"tag_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
-			"tag_value": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
 		},
 	}
 }
 
-// AWS X-Ray integration schema element
-func cloudAwsEuSovereignIntegrationsXrayElem() *schema.Resource {
+// X-Ray integration schema
+func cloudAwsEuSovereignIntegrationsXRayElem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"metrics_polling_interval": {
@@ -262,104 +243,6 @@ func cloudAwsEuSovereignIntegrationsXrayElem() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "Specify each AWS region that includes the resources that you want to monitor",
 			},
-			"fetch_extended_inventory": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"fetch_tags": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.",
-			},
-			"tag_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
-			"tag_value": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.",
-			},
 		},
 	}
-}
-
-// expandCloudAwsEuSovereignIntegrationsInput expands the schema data for EU SOV integrations (4 supported services)
-func expandCloudAwsEuSovereignIntegrationsInput(d *schema.ResourceData, linkedAccountID int) cloud.CloudIntegrationsInput {
-	awsInput := cloud.CloudAwsIntegrationsInput{}
-
-	// EU SOV supports only 4 services
-	if v, ok := d.GetOk("cloudtrail"); ok {
-		awsInput.Cloudtrail = expandCloudAwsIntegrationCloudtrailInput(v.([]interface{}), linkedAccountID)
-	}
-
-	if v, ok := d.GetOk("health"); ok {
-		awsInput.Health = expandCloudAwsIntegrationHealthInput(v.([]interface{}), linkedAccountID)
-	}
-
-	if v, ok := d.GetOk("trusted_advisor"); ok {
-		awsInput.Trustedadvisor = expandCloudAwsIntegrationTrustedAdvisorInput(v.([]interface{}), linkedAccountID)
-	}
-
-	if v, ok := d.GetOk("xray"); ok {
-		awsInput.AwsXray = expandCloudAwsIntegrationXRayInput(v.([]interface{}), linkedAccountID)
-	}
-
-	input := cloud.CloudIntegrationsInput{
-		Aws: awsInput,
-	}
-
-	return input
-}
-
-// expandCloudAwsEuSovereignDisableIntegrationsInput expands the schema data for disabling EU SOV integrations
-func expandCloudAwsEuSovereignDisableIntegrationsInput(d *schema.ResourceData, linkedAccountID int) cloud.CloudDisableIntegrationsInput {
-	awsInput := cloud.CloudAwsDisableIntegrationsInput{}
-
-	// EU SOV supports only 4 services
-	if _, ok := d.GetOk("cloudtrail"); ok {
-		awsInput.Cloudtrail = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
-	}
-
-	if _, ok := d.GetOk("health"); ok {
-		awsInput.Health = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
-	}
-
-	if _, ok := d.GetOk("trusted_advisor"); ok {
-		awsInput.Trustedadvisor = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
-	}
-
-	if _, ok := d.GetOk("xray"); ok {
-		awsInput.AwsXray = []cloud.CloudDisableAccountIntegrationInput{{LinkedAccountId: linkedAccountID}}
-	}
-
-	input := cloud.CloudDisableIntegrationsInput{
-		Aws: awsInput,
-	}
-
-	return input
-}
-
-// flattenCloudAwsEuSovereignIntegrations flattens EU SOV integrations data from the API into the schema
-func flattenCloudAwsEuSovereignIntegrations(linkedAccount *cloud.CloudLinkedAccount, accountID int, d *schema.ResourceData) error {
-	_ = d.Set("account_id", accountID)
-	_ = d.Set("linked_account_id", linkedAccount.ID)
-
-	// EU SOV supports only 4 services - use regular AWS integration flatten functions
-	for _, integration := range linkedAccount.Integrations {
-		switch t := integration.(type) {
-		case *cloud.CloudCloudtrailIntegration:
-			_ = d.Set("cloudtrail", flattenCloudAwsCloudTrailIntegration(t))
-		case *cloud.CloudHealthIntegration:
-			_ = d.Set("health", flattenCloudAwsHealthIntegration(t))
-		case *cloud.CloudTrustedadvisorIntegration:
-			_ = d.Set("trusted_advisor", flattenCloudAwsTrustedAdvisorIntegration(t))
-		case *cloud.CloudAwsXrayIntegration:
-			_ = d.Set("xray", flattenCloudAwsXRayIntegration(t))
-		}
-	}
-
-	return nil
 }
