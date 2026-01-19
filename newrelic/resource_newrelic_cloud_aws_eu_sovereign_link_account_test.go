@@ -4,9 +4,9 @@ package newrelic
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -15,8 +15,13 @@ func TestAccNewRelicCloudAwsEuSovereignLinkAccount_Basic(t *testing.T) {
 	resourceName := "newrelic_cloud_aws_eu_sovereign_link_account.foo"
 	rName := generateNameForIntegrationTestResource()
 
+	testAwsEuSovereignAccountId := os.Getenv("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID")
+	if testAwsEuSovereignAccountId == "" {
+		t.Skipf("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID must be set for acceptance test")
+	}
+
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccCloudPreCheck(t) },
+		PreCheck:     func() { testAccPreCheckEnvVars(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckNewRelicCloudAwsEuSovereignLinkAccountDestroy,
 		Steps: []resource.TestStep{
@@ -111,15 +116,9 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
 }
 
 func testAccExpectedAwsEuSovereignArn() string {
-	return fmt.Sprintf("arn:aws-eusc:iam::%[1]s:role/NewRelicInfrastructure-Integrations", testAccExpectedAwsEuSovereignAccountId())
+	return fmt.Sprintf("arn:aws-eusc:iam::%s:role/NewRelicInfrastructure-Integrations", testAccExpectedAwsEuSovereignAccountId())
 }
 
 func testAccExpectedAwsEuSovereignAccountId() string {
-	return testAccGetEnvOrSkip("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID")
-}
-
-func testAccCloudPreCheck(t *testing.T) {
-	if v := testAccGetEnvOrSkip("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID"); v == "" {
-		t.Skipf("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID must be set for acceptance tests")
-	}
+	return os.Getenv("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID")
 }

@@ -4,6 +4,7 @@ package newrelic
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 
@@ -15,8 +16,13 @@ func TestAccNewRelicCloudAwsEuSovereignIntegrations_Basic(t *testing.T) {
 	resourceName := "newrelic_cloud_aws_eu_sovereign_integrations.foo"
 	rName := generateNameForIntegrationTestResource()
 
+	testAwsEuSovereignAccountId := os.Getenv("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID")
+	if testAwsEuSovereignAccountId == "" {
+		t.Skipf("NEW_RELIC_AWS_EU_SOVEREIGN_ACCOUNT_ID must be set for acceptance test")
+	}
+
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccCloudPreCheck(t) },
+		PreCheck:     func() { testAccPreCheckEnvVars(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckNewRelicCloudAwsEuSovereignIntegrationsDestroy,
 		Steps: []resource.TestStep{

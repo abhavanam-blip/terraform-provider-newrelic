@@ -67,3 +67,5 @@ $ terraform import newrelic_cloud_aws_eu_sovereign_link_account.foo <id>
   The collection mode cannot be changed after the account is linked. If you need to change it, you must destroy and recreate the resource.
 
 * **Region Availability**: AWS EU Sovereign regions are limited compared to standard AWS regions. The primary EU Sovereign region is `eusc-de-east-1`. Ensure the services you want to monitor are available in this region.
+
+* **Provider Region**: Ensure your New Relic provider is configured with `region = "EU"` or set the `NEW_RELIC_REGION=EU` environment variable. EU Sovereign resources require the EU region endpoint.

@@ -42,7 +42,7 @@ resource "newrelic_cloud_aws_eu_sovereign_integrations" "integrations" {
     metrics_polling_interval = 300
   }
 
-  xray {
+  x_ray {
     metrics_polling_interval = 300
     aws_regions              = ["eusc-de-east-1"]
   }
@@ -61,32 +61,16 @@ The following integration types are supported:
 ### `cloudtrail`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
 * `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
-* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
 ### `health`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
-* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
 ### `trusted_advisor`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
-* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
-### `xray`
+### `x_ray`
 * `metrics_polling_interval` - (Optional) The data polling interval in seconds.
 * `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
-* `fetch_extended_inventory` - (Optional) Determine if extra inventory data be collected or not. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `fetch_tags` - (Optional) Specify if tags should be collected. May affect total data collection time and contribute to the Cloud provider API rate limit.
-* `tag_key` - (Optional) Specify a Tag key associated with the resources that you want to monitor. Filter values are case-sensitive.
-* `tag_value` - (Optional) Specify a Tag value associated with the resources that you want to monitor. Filter values are case-sensitive.
 
 ## Attributes Reference
 
@@ -104,9 +88,11 @@ $ terraform import newrelic_cloud_aws_eu_sovereign_integrations.foo <linked_acco
 
 ## Notes
 
-* **Limited Service Support**: EU Sovereign Cloud integration supports only four AWS services: CloudTrail, Health, Trusted Advisor, and X-Ray. These services support polling mode only via the `metrics_polling_interval` parameter.
+* **Limited Service Support**: This resource supports only four AWS services for PULL mode: CloudTrail, Health, Trusted Advisor, and X-Ray. These services support polling mode via the `metrics_polling_interval` parameter.
 
-* **Polling Mode Only**: Unlike regular AWS integrations that support both PUSH (Metric Streams) and PULL (Polling) collection modes, EU Sovereign integrations use polling exclusively for data collection from the supported services.
+* **PUSH vs PULL Mode**: EU Sovereign supports both collection modes:
+  - **PULL mode**: Use this `newrelic_cloud_aws_eu_sovereign_integrations` resource to enable polling for CloudTrail, Health, Trusted Advisor, and X-Ray services.
+  - **PUSH mode**: Set `metric_collection_mode = "PUSH"` on the `newrelic_cloud_aws_eu_sovereign_link_account` resource to use CloudWatch Metric Streams for all CloudWatch metrics. PUSH mode requires additional AWS resources (Kinesis Firehose, S3 bucket, CloudWatch Metric Stream).
 
 * **Service Availability**: Check AWS documentation for service availability in the EU Sovereign region (`eusc-de-east-1`).
 
@@ -115,3 +101,5 @@ $ terraform import newrelic_cloud_aws_eu_sovereign_integrations.foo <linked_acco
 * **Permissions**: Your AWS EU Sovereign IAM role must have appropriate permissions for each service you enable. Refer to New Relic's documentation for specific IAM policy requirements.
 
 * **Polling Intervals**: Consider the impact of polling intervals on AWS API rate limits and costs. Lower intervals provide more frequent updates but consume more API calls.
+
+* **Provider Region**: Ensure your New Relic provider is configured with `region = "EU"` or set the `NEW_RELIC_REGION=EU` environment variable.
