@@ -110,29 +110,21 @@ resource "newrelic_cloud_aws_eu_sovereign_integrations" "foo" {
   linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.foo.id
 
   cloudtrail {
-    metrics_polling_interval = 300
+    metrics_polling_interval = 3600
     aws_regions              = ["eusc-de-east-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
   }
 
   health {
-    metrics_polling_interval = 300
-    fetch_extended_inventory = true
-    fetch_tags               = true
+    metrics_polling_interval = 3600
   }
 
   trusted_advisor {
-    metrics_polling_interval = 300
-    fetch_extended_inventory = true
-    fetch_tags               = true
+    metrics_polling_interval = 3600
   }
 
-  xray {
-    metrics_polling_interval = 300
+  x_ray {
+    metrics_polling_interval = 3600
     aws_regions              = ["eusc-de-east-1"]
-    fetch_extended_inventory = true
-    fetch_tags               = true
   }
 }
 `, rName, testAccExpectedAwsEuSovereignArn())
@@ -149,29 +141,21 @@ resource "newrelic_cloud_aws_eu_sovereign_integrations" "foo" {
   linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.foo.id
 
   cloudtrail {
-    metrics_polling_interval = 600
+    metrics_polling_interval = 7200
     aws_regions              = ["eusc-de-east-1"]
-    fetch_extended_inventory = false
-    fetch_tags               = false
   }
 
   health {
-    metrics_polling_interval = 600
-    fetch_extended_inventory = false
-    fetch_tags               = false
+    metrics_polling_interval = 7200
   }
 
   trusted_advisor {
-    metrics_polling_interval = 600
-    fetch_extended_inventory = false
-    fetch_tags               = false
+    metrics_polling_interval = 7200
   }
 
-  xray {
-    metrics_polling_interval = 600
+  x_ray {
+    metrics_polling_interval = 7200
     aws_regions              = ["eusc-de-east-1"]
-    fetch_extended_inventory = false
-    fetch_tags               = false
   }
 }
 `, rName, testAccExpectedAwsEuSovereignArn())

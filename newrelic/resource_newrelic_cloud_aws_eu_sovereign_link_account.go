@@ -3,8 +3,8 @@ package newrelic
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -58,19 +58,14 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountCreate(ctx context.Context, d
 
 	createInput := expandAwsEuSovereignLinkAccountInputForCreate(d)
 
-	log.Printf("[INFO] Creating New Relic AWS EU Sovereign link account %s", d.Get("name"))
-
 	cloudLinkedAccount, err := client.Cloud.CloudLinkAccountWithContext(ctx, accountID, createInput)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] CloudLinkAccount response: LinkedAccounts=%d, Errors=%d", len(cloudLinkedAccount.LinkedAccounts), len(cloudLinkedAccount.Errors))
-
 	var diags diag.Diagnostics
 	if len(cloudLinkedAccount.Errors) > 0 {
 		for _, err := range cloudLinkedAccount.Errors {
-			log.Printf("[ERROR] CloudLinkAccount error: Type=%s, Message=%s", err.Type, err.Message)
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  err.Type + " " + err.Message,
@@ -80,10 +75,8 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountCreate(ctx context.Context, d
 	}
 
 	var linkedAccountID int
-	for _, linkedAccount := range cloudLinkedAccount.LinkedAccounts {
-		log.Printf("[DEBUG] LinkedAccount found: ID=%d, Name=%s", linkedAccount.ID, linkedAccount.Name)
-		linkedAccountID = linkedAccount.ID
-		break
+	if len(cloudLinkedAccount.LinkedAccounts) > 0 {
+		linkedAccountID = cloudLinkedAccount.LinkedAccounts[0].ID
 	}
 
 	if linkedAccountID == 0 {
@@ -106,12 +99,13 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountRead(ctx context.Context, d *
 		return diag.FromErr(convErr)
 	}
 
-	log.Printf("[INFO] Reading New Relic AWS EU Sovereign link account %d", linkedAccountID)
-
-	linkedAccount, err := client.Cloud.GetLinkedAccount(accountID, linkedAccountID)
+	linkedAccount, err := client.Cloud.GetLinkedAccountWithContext(ctx, accountID, linkedAccountID)
 	if err != nil {
-		d.SetId("")
-		return nil
+		if strings.Contains(err.Error(), "not found") {
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
 	return diag.FromErr(flattenAwsEuSovereignLinkAccountForRead(linkedAccount, d, accountID))
@@ -128,8 +122,6 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountUpdate(ctx context.Context, d
 	}
 
 	updateInput := expandAwsEuSovereignLinkAccountInputForUpdate(d, linkedAccountID)
-
-	log.Printf("[INFO] Updating New Relic AWS EU Sovereign link account %d", linkedAccountID)
 
 	_, err := client.Cloud.CloudUpdateAccountWithContext(ctx, accountID, updateInput)
 	if err != nil {
@@ -151,12 +143,23 @@ func resourceNewRelicCloudAwsEuSovereignLinkAccountDelete(ctx context.Context, d
 		{LinkedAccountId: linkedAccountID},
 	}
 
-	log.Printf("[INFO] Unlinking New Relic AWS EU Sovereign link account %d", linkedAccountID)
-
-	_, err := client.Cloud.CloudUnlinkAccountWithContext(ctx, accountID, unlinkInput)
+	cloudUnlinkAccountPayload, err := client.Cloud.CloudUnlinkAccountWithContext(ctx, accountID, unlinkInput)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	var diags diag.Diagnostics
+	if len(cloudUnlinkAccountPayload.Errors) > 0 {
+		for _, err := range cloudUnlinkAccountPayload.Errors {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  err.Type + " " + err.Message,
+			})
+		}
+		return diags
+	}
+
+	d.SetId("")
 
 	return nil
 }
