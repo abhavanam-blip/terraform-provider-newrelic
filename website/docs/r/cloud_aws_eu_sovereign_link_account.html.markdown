@@ -1,33 +1,28 @@
 ---
 layout: "newrelic"
 page_title: "New Relic: newrelic_cloud_aws_eu_sovereign_link_account"
-sidebar_current: "docs-newrelic-resource-cloud-aws-eu-sovereign-link-account"
+sidebar_current: "docs-newrelic-cloud-resource-aws-eu-sovereign-link-account"
 description: |-
   Link an AWS EU Sovereign account to New Relic.
 ---
-
 # Resource: newrelic_cloud_aws_eu_sovereign_link_account
 
 Use this resource to link an AWS EU Sovereign account to New Relic.
+Is the
+## Prerequisite
 
-## Prerequisites
+To link an AWS EU Sovereign account to New Relic, you need an AWS EU Sovereign Cloud account. AWS EU Sovereign Cloud is designed to address the specific regulatory needs of European Union public sector organizations and their supporting ecosystem. It is an isolated AWS region designed to host sensitive data and regulated workloads in the cloud, helping customers support their EU compliance requirements.
 
-Ensure you have followed [New Relic's AWS EU Sovereign setup documentation](https://docs.newrelic.com/docs/infrastructure/amazon-integrations/aws-integrations/aws-eu-sovereign-cloud-integrations/) to set up your AWS EU Sovereign environment before using this resource.
-
-To use this resource effectively, you'll need:
-
-1. An AWS EU Sovereign account with appropriate permissions
-2. A New Relic account with permissions to create cloud integrations
-3. An IAM role in your AWS EU Sovereign account with the necessary permissions for New Relic integrations
-4. The ARN of the IAM role created for New Relic
+To pull data from AWS EU Sovereign, follow the [steps outlined here](https://docs.newrelic.com/docs/infrastructure/amazon-integrations/aws-integrations/aws-eu-sovereign-cloud-integrations/).
 
 ## Example Usage
 
 ```hcl
 resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
-  name                   = "my-eu-sovereign-account"
-  arn                    = "arn:aws-eusc:iam::123456789012:role/NewRelicInfrastructure-Integrations"
+  account_id             = 1234567
+  name                   = "My New Relic - AWS EU Sovereign Linked Account"
   metric_collection_mode = "PULL"
+  arn                    = "arn:aws-eusc:iam::123456789012:role/NewRelicInfrastructure-Integrations"
 }
 ```
 
@@ -35,37 +30,26 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
 
 The following arguments are supported:
 
-* `name` - (Required) The name of the linked account.
-* `arn` - (Required) The ARN of the IAM role.
-* `metric_collection_mode` - (Optional) How metrics are collected. Either `PULL` or `PUSH`. Defaults to `PULL`. **Note**: This argument cannot be updated after resource creation.
-* `account_id` - (Optional) The account ID for the New Relic account. If omitted, this defaults to the account ID specified in the provider configuration.
+- `account_id` - (Optional) The New Relic account ID to operate on. This allows the user to override the `account_id` attribute set on the provider. Defaults to the environment variable `NEW_RELIC_ACCOUNT_ID`, if not specified in the configuration.
+- `name` - (Required) The name/identifier of the AWS EU Sovereign - New Relic 'linked' account.
+- `metric_collection_mode` - (Optional) The mode by which metric data is to be collected from the linked AWS EU Sovereign account. Defaults to `PULL`, if not specified in the configuration.
+  - Use `PUSH` for Metric Streams and `PULL` for API Polling based metric collection respectively.
+- `arn` - (Required) The Amazon Resource Name (ARN) of the IAM role.
+
+-> **NOTE:** Altering the `account_id` (or) `metric_collection_mode` of an already applied `newrelic_cloud_aws_eu_sovereign_link_account` resource shall trigger a recreation of the resource, instead of an update.
+
+-> **NOTE:** This resource requires the New Relic provider to be configured with `region = "EU"` or the `NEW_RELIC_REGION=EU` environment variable.
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The ID of the linked account.
+- `id` - The ID of the AWS EU Sovereign linked account.
 
 ## Import
 
-Linked accounts can be imported using the `id`, e.g.
+Linked AWS EU Sovereign accounts can be imported using the `id`, e.g.
 
 ```bash
 $ terraform import newrelic_cloud_aws_eu_sovereign_link_account.foo <id>
 ```
-
-## Notes
-
-* **AWS EU Sovereign Cloud**: This resource is specifically for AWS EU Sovereign Cloud (aws-eusc partition) accounts. For regular AWS accounts, use `newrelic_cloud_aws_link_account`. For AWS GovCloud, use `newrelic_cloud_aws_govcloud_link_account`.
-
-* **IAM Role Permissions**: Ensure your AWS EU Sovereign IAM role has the necessary permissions for the integrations you plan to enable. Refer to New Relic's documentation for specific permission requirements.
-
-* **Metric Collection Mode**:
-  - `PULL` mode (default): New Relic polls AWS APIs to collect metrics
-  - `PUSH` mode: Uses AWS CloudWatch metric streams to push metrics to New Relic
-
-  The collection mode cannot be changed after the account is linked. If you need to change it, you must destroy and recreate the resource.
-
-* **Region Availability**: AWS EU Sovereign regions are limited compared to standard AWS regions. The primary EU Sovereign region is `eusc-de-east-1`. Ensure the services you want to monitor are available in this region.
-
-* **Provider Region**: Ensure your New Relic provider is configured with `region = "EU"` or set the `NEW_RELIC_REGION=EU` environment variable. EU Sovereign resources require the EU region endpoint.

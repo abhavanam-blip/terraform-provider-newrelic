@@ -78,6 +78,16 @@ resource "aws_iam_role_policy_attachment" "readonly_access_policy_attach" {
   policy_arn = "arn:aws-eusc:iam::aws:policy/ReadOnlyAccess"
 }
 
+# Wait for IAM role to propagate in EU Sovereign region
+# EU Sovereign has slower IAM propagation than standard AWS/GovCloud
+resource "terraform_data" "wait_for_iam" {
+  depends_on = [aws_iam_role_policy_attachment.newrelic_aws_policy_attach, aws_iam_role_policy_attachment.readonly_access_policy_attach]
+
+  provisioner "local-exec" {
+    command = "sleep 10"
+  }
+}
+
 # PUSH mode resources (Metric Streams)
 resource "newrelic_cloud_aws_eu_sovereign_link_account" "newrelic_cloud_integration_push" {
   count                  = local.create_push ? 1 : 0
@@ -85,7 +95,7 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "newrelic_cloud_integrat
   arn                    = aws_iam_role.newrelic_aws_role.arn
   metric_collection_mode = "PUSH"
   name                   = "${var.name} metric stream"
-  depends_on             = [aws_iam_role_policy_attachment.newrelic_aws_policy_attach, aws_iam_role_policy_attachment.readonly_access_policy_attach]
+  depends_on             = [terraform_data.wait_for_iam]
 }
 
 resource "newrelic_api_access_key" "newrelic_aws_access_key" {
@@ -240,7 +250,7 @@ resource "newrelic_cloud_aws_eu_sovereign_link_account" "newrelic_cloud_integrat
   arn                    = aws_iam_role.newrelic_aws_role.arn
   metric_collection_mode = "PULL"
   name                   = "${var.name} pull"
-  depends_on             = [aws_iam_role_policy_attachment.newrelic_aws_policy_attach, aws_iam_role_policy_attachment.readonly_access_policy_attach]
+  depends_on             = [terraform_data.wait_for_iam]
 }
 
 # Configure AWS EU Sovereign integrations

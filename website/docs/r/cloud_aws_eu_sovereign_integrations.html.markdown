@@ -3,31 +3,32 @@ layout: "newrelic"
 page_title: "New Relic: newrelic_cloud_aws_eu_sovereign_integrations"
 sidebar_current: "docs-newrelic-resource-cloud-aws-eu-sovereign-integrations"
 description: |-
-  Configure AWS EU Sovereign integrations for a linked AWS EU Sovereign account.
+    Integrate AWS EU Sovereign services with New Relic.
 ---
 
-# Resource: newrelic_cloud_aws_eu_sovereign_integrations
+# Resource: newrelic\_cloud\_aws\_eu\_sovereign\_integrations
 
-Use this resource to enable and configure New Relic's integrations with AWS EU Sovereign Cloud services.
+Use this resource to integrate AWS EU Sovereign services with New Relic.
 
-## Prerequisites
+## Prerequisite
 
-* You must have an AWS EU Sovereign account linked to New Relic using the `newrelic_cloud_aws_eu_sovereign_link_account` resource
-* Your AWS EU Sovereign IAM role must have the appropriate permissions for the services you want to monitor
-* The AWS services must be available in your target EU Sovereign regions
+Setup is required for this resource to work properly. This resource assumes you have [linked an AWS EU Sovereign account](cloud_aws_eu_sovereign_link_account.html) to New Relic and configured it to push metrics using CloudWatch Metric Streams.
 
-See [New Relic's AWS EU Sovereign integration documentation](https://docs.newrelic.com/docs/infrastructure/amazon-integrations/aws-integrations/aws-eu-sovereign-cloud-integrations/) for setup instructions.
+New Relic doesn't automatically receive metrics from AWS EU Sovereign for some services so this resource can be used to configure integrations to those services.
 
 ## Example Usage
 
+The following example demonstrates the use of the `newrelic_cloud_aws_eu_sovereign_integrations` resource with all AWS EU Sovereign integrations supported by the resource.
+
 ```hcl
-resource "newrelic_cloud_aws_eu_sovereign_link_account" "account" {
-  name = "my-eu-sovereign-account"
-  arn  = "arn:aws-eusc:iam::123456789012:role/NewRelicInfrastructure-Integrations"
+resource "newrelic_cloud_aws_eu_sovereign_link_account" "foo" {
+  arn                    = "arn:aws-eusc:iam::123456789012:role/NewRelicInfrastructure-Integrations"
+  metric_collection_mode = "PULL"
+  name                   = "my-eu-sovereign-account"
 }
 
-resource "newrelic_cloud_aws_eu_sovereign_integrations" "integrations" {
-  linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.account.id
+resource "newrelic_cloud_aws_eu_sovereign_integrations" "bar" {
+  linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.foo.id
 
   cloudtrail {
     metrics_polling_interval = 300
@@ -49,57 +50,141 @@ resource "newrelic_cloud_aws_eu_sovereign_integrations" "integrations" {
 }
 ```
 
+## Supported AWS EU Sovereign Integrations
+
+-> **NOTE:** AWS EU Sovereign Cloud only supports the following four integrations.
+
+| Block             | Description                   |
+|-------------------|-------------------------------|
+| `cloudtrail`      | CloudTrail Integration        |
+| `health`          | Health Integration            |
+| `trusted_advisor` | Trusted Advisor Integration   |
+| `x_ray`           | X-Ray Integration             |
+
 ## Argument Reference
 
-The following arguments are supported:
+-> **WARNING:** Starting with [v3.27.2](https://registry.terraform.io/providers/newrelic/newrelic/3.27.2) of the New Relic Terraform Provider, updating the `linked_account_id` of a `newrelic_cloud_aws_eu_sovereign_integrations` resource that has been applied would **force a replacement** of the resource (destruction of the resource, followed by the creation of a new resource). Please carefully review the output of `terraform plan`, which would clearly indicate a replacement of this resource, before performing a `terraform apply`.
 
-* `account_id` - (Optional) The account ID for the New Relic account. If omitted, this defaults to the account ID specified in the provider configuration.
-* `linked_account_id` - (Required) The ID of the AWS EU Sovereign linked account.
+* `account_id` - (Optional) The New Relic account ID to operate on. This allows the user to override the `account_id` attribute set on the provider. Defaults to the environment variable `NEW_RELIC_ACCOUNT_ID`.
+* `linked_account_id` - (Required) The ID of the linked AWS EU Sovereign account in New Relic.
 
-The following integration types are supported:
+### Arguments to be Specified with Integration Blocks
 
-### `cloudtrail`
-* `metrics_polling_interval` - (Optional) The data polling interval in seconds.
-* `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
+The following arguments are intended to be used within ["integration blocks"](#integration-blocks) in the resource.
 
-### `health`
-* `metrics_polling_interval` - (Optional) The data polling interval in seconds.
+* `metrics_polling_interval` - (Optional) The data polling interval **in seconds**.
+  * Supported by all integration blocks: `cloudtrail`, `health`, `trusted_advisor`, `x_ray`
+  * Valid values: 300, 900, 1800, 3600 (seconds)
 
-### `trusted_advisor`
-* `metrics_polling_interval` - (Optional) The data polling interval in seconds.
+* `aws_regions` - (Optional) Specify each AWS EU Sovereign region that includes the resources that you want to monitor.
+  * Supported by: `cloudtrail`, `x_ray`
+  * Valid regions: `eusc-de-east-1`
 
-### `x_ray`
-* `metrics_polling_interval` - (Optional) The data polling interval in seconds.
-* `aws_regions` - (Optional) List of AWS EU Sovereign regions that include the resources you want to monitor.
+## Integration Blocks
+
+The following section lists out arguments which may be used with each AWS EU Sovereign integration supported by this resource.
+
+<details>
+  <summary>Expand this list to see all integration blocks supported by this resource.</summary>
+  <details>
+    <summary>cloudtrail</summary>
+
+*  Supported Arguments: `aws_regions`, `metrics_polling_interval`
+*  Valid `metrics_polling_interval` values: 300, 900, 1800, 3600 (seconds)
+```hcl
+  cloudtrail {
+    metrics_polling_interval = 300
+    aws_regions              = ["eusc-de-east-1"]
+  }
+```
+  </details>
+  <details>
+    <summary>health</summary>
+
+*  Supported Arguments: `metrics_polling_interval`
+*  Valid `metrics_polling_interval` values: 300, 900, 1800, 3600 (seconds)
+```hcl
+  health {
+    metrics_polling_interval = 300
+  }
+```
+  </details>
+  <details>
+    <summary>trusted_advisor</summary>
+
+*  Supported Arguments: `metrics_polling_interval`
+*  Valid `metrics_polling_interval` values: 300, 900, 1800, 3600 (seconds)
+```hcl
+  trusted_advisor {
+    metrics_polling_interval = 300
+  }
+```
+  </details>
+  <details>
+    <summary>x_ray</summary>
+
+*  Supported Arguments: `aws_regions`, `metrics_polling_interval`
+*  Valid `metrics_polling_interval` values: 60, 300, 900, 1800, 3600 (seconds)
+```hcl
+  x_ray {
+    metrics_polling_interval = 300
+    aws_regions              = ["eusc-de-east-1"]
+  }
+```
+  </details>
+</details>
 
 ## Attributes Reference
 
 In addition to all arguments above, the following attributes are exported:
 
-* `id` - The ID of the integration configuration.
+* `id` - The ID of the AWS EU Sovereign linked account.
+
+## Additional Examples
+
+### All Integrations with Default Polling Intervals
+
+```hcl
+resource "newrelic_cloud_aws_eu_sovereign_integrations" "example" {
+  linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.foo.id
+
+  cloudtrail {
+    metrics_polling_interval = 900
+    aws_regions              = ["eusc-de-east-1"]
+  }
+
+  health {
+    metrics_polling_interval = 300
+  }
+
+  trusted_advisor {
+    metrics_polling_interval = 3600
+  }
+
+  x_ray {
+    metrics_polling_interval = 300
+    aws_regions              = ["eusc-de-east-1"]
+  }
+}
+```
+
+### Minimal Configuration (Empty Blocks Use Defaults)
+
+```hcl
+resource "newrelic_cloud_aws_eu_sovereign_integrations" "minimal" {
+  linked_account_id = newrelic_cloud_aws_eu_sovereign_link_account.foo.id
+
+  cloudtrail {}
+  health {}
+  trusted_advisor {}
+  x_ray {}
+}
+```
 
 ## Import
 
-Integrations can be imported using the `linked_account_id`, e.g.
+AWS EU Sovereign integrations can be imported using the `id`, e.g.
 
 ```bash
-$ terraform import newrelic_cloud_aws_eu_sovereign_integrations.foo <linked_account_id>
+$ terraform import newrelic_cloud_aws_eu_sovereign_integrations.foo <id>
 ```
-
-## Notes
-
-* **Limited Service Support**: This resource supports only four AWS services for PULL mode: CloudTrail, Health, Trusted Advisor, and X-Ray. These services support polling mode via the `metrics_polling_interval` parameter.
-
-* **PUSH vs PULL Mode**: EU Sovereign supports both collection modes:
-  - **PULL mode**: Use this `newrelic_cloud_aws_eu_sovereign_integrations` resource to enable polling for CloudTrail, Health, Trusted Advisor, and X-Ray services.
-  - **PUSH mode**: Set `metric_collection_mode = "PUSH"` on the `newrelic_cloud_aws_eu_sovereign_link_account` resource to use CloudWatch Metric Streams for all CloudWatch metrics. PUSH mode requires additional AWS resources (Kinesis Firehose, S3 bucket, CloudWatch Metric Stream).
-
-* **Service Availability**: Check AWS documentation for service availability in the EU Sovereign region (`eusc-de-east-1`).
-
-* **Regional Considerations**: When specifying `aws_regions`, ensure you're using the correct EU Sovereign region identifier (`eusc-de-east-1`).
-
-* **Permissions**: Your AWS EU Sovereign IAM role must have appropriate permissions for each service you enable. Refer to New Relic's documentation for specific IAM policy requirements.
-
-* **Polling Intervals**: Consider the impact of polling intervals on AWS API rate limits and costs. Lower intervals provide more frequent updates but consume more API calls.
-
-* **Provider Region**: Ensure your New Relic provider is configured with `region = "EU"` or set the `NEW_RELIC_REGION=EU` environment variable.
